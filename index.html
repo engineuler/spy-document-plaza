@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>스파이의 비밀문서 광장</title>
+<style>
+/* ==========================================================
+   1) 디자인 토큰 — 레시피 지정값 그대로 준수
+   ========================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap');
+
+:root{
+  --primary:#2383E2;
+  --text:#191919;
+  --sub:#787774;
+  --bg:#FFFFFF;
+  --surface:#F7F6F3;
+  --border:#E9E9E7;
+  --danger:#E2673E;
+  --success:#2E9E5B;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Inter',sans-serif;
+  letter-spacing:-0.01em;
+  color:var(--text);
+  background:var(--bg);
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{font-weight:800}
+button{font-family:inherit}
+input,select,textarea{font-family:inherit;font-size:14px;color:var(--text)}
+a{color:inherit}
+
+.icon{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.icon-sm{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+
+.btn{border-radius:10px;padding:12px 20px;font-weight:700;background:var(--primary);color:#fff;border:none;cursor:pointer;transition:.15s;font-size:14px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{filter:brightness(.95)}
+.btn:active{transform:scale(.98)}
+.btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--surface);filter:none}
+.btn-sub{background:var(--surface);color:var(--text);border:1px solid var(--border)}
+.btn-sub:hover{background:var(--border);filter:none}
+.btn-block{width:100%;justify-content:center}
+.btn-sm{padding:7px 14px;font-size:12.5px;border-radius:8px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+#app{min-height:100vh;display:flex;flex-direction:column}
+
+.header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.92);backdrop-filter:blur(6px);border-bottom:1px solid var(--border)}
+.header-inner{max-width:1080px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:800;cursor:pointer;flex-shrink:0}
+.logo .icon{color:var(--primary)}
+
+.searchbar{flex:1;min-width:180px;display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:9px 14px}
+.searchbar .icon-sm{color:var(--sub)}
+.searchbar input{flex:1;background:transparent;border:none;outline:none;font-size:14px}
+.searchbar input::placeholder{color:var(--sub)}
+
+.nav-icons{display:flex;align-items:center;gap:6px}
+.nav-btn{position:relative;background:transparent;border:none;cursor:pointer;color:var(--sub);border-radius:8px;padding:8px;display:flex}
+.nav-btn:hover{background:var(--surface);color:var(--text)}
+.nav-btn.active{color:var(--primary);background:var(--surface)}
+.notif-wrap{display:flex}
+.notif-badge{position:absolute;top:2px;right:2px;background:var(--danger);color:#fff;font-size:10px;font-weight:700;border-radius:99px;min-width:16px;height:16px;display:flex;align-items:center;justify-content:center;padding:0 3px}
+.notif-panel{position:absolute;top:60px;right:16px;width:min(320px, calc(100vw - 32px));max-height:360px;overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:40;padding:8px}
+.notif-item{padding:10px 12px;border-radius:8px;font-size:13px;line-height:1.5}
+.notif-item:hover{background:var(--surface)}
+.notif-empty{padding:20px;text-align:center;color:var(--sub);font-size:13px}
+.notif-time{font-size:11px;color:var(--sub);margin-top:2px}
+
+main{flex:1;max-width:1080px;width:100%;margin:0 auto;padding:24px 20px 60px}
+
+.page-title{font-size:22px;margin-bottom:4px}
+.page-sub{color:var(--sub);font-size:14px;margin-bottom:20px}
+
+.filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.filter-bar select{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:8px 12px;cursor:pointer}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
+
+.card{border:1px solid var(--border);border-radius:12px;padding:16px;cursor:pointer;transition:.15s;background:var(--bg);display:flex;flex-direction:column;gap:10px}
+.card:hover{border-color:var(--primary);box-shadow:0 2px 10px rgba(35,131,226,.08)}
+
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.card-title{font-size:15px;font-weight:700;line-height:1.4}
+
+.badge{font-size:11px;font-weight:700;padding:4px 9px;border-radius:99px;white-space:nowrap;flex-shrink:0}
+.badge-open{background:#E9F3FD;color:var(--primary)}
+.badge-closed{background:var(--surface);color:var(--sub)}
+
+.tag-row{display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:12px;font-weight:500;padding:4px 10px;border-radius:99px;background:var(--surface);border:1px solid var(--border);color:var(--text)}
+.tag-muted{color:var(--sub)}
+
+.card-meta{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--sub);border-top:1px solid var(--border);padding-top:10px;flex-wrap:wrap;gap:6px}
+.meta-item{display:flex;align-items:center;gap:4px}
+
+.empty{text-align:center;color:var(--sub);padding:60px 20px;font-size:14px}
+
+.form-wrap{max-width:560px}
+.field{margin-bottom:18px}
+.field label{display:block;font-size:13px;font-weight:700;margin-bottom:7px}
+.field .hint{font-weight:400;color:var(--sub);font-size:12px;margin-left:4px}
+.field input[type=text],.field input[type=url],.field textarea{
+  width:100%;border:1px solid var(--border);border-radius:10px;padding:11px 13px;outline:none;background:var(--bg);
+}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--primary)}
+.field textarea{min-height:90px;resize:vertical}
+.chip-select{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1px solid var(--border);border-radius:99px;padding:7px 14px;font-size:13px;cursor:pointer;background:var(--bg);user-select:none;transition:.15s}
+.chip.selected{background:var(--primary);color:#fff;border-color:var(--primary)}
+.form-actions{display:flex;gap:10px;margin-top:24px}
+
+.back-btn{display:inline-flex;align-items:center;gap:6px;color:var(--sub);background:none;border:none;cursor:pointer;font-size:13px;margin-bottom:16px;padding:6px 0}
+.back-btn:hover{color:var(--text)}
+
+.detail-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px}
+.detail-title{font-size:21px;line-height:1.4}
+.detail-author{color:var(--sub);font-size:13px;margin-bottom:18px;display:flex;gap:10px;align-items:center}
+
+.detail-box{border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px}
+.detail-box h3{font-size:13px;color:var(--sub);font-weight:700;margin-bottom:10px}
+.link-row{display:flex;align-items:center;gap:8px;color:var(--primary);font-size:14px;font-weight:600;word-break:break-all}
+
+.role-fill-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0}
+.role-fill-row:not(:last-child){border-bottom:1px solid var(--border)}
+
+.desc-text{font-size:14px;line-height:1.7;white-space:pre-wrap}
+
+.comment{padding:12px 0;border-bottom:1px solid var(--border);font-size:13.5px}
+.comment:last-child{border-bottom:none}
+.comment-author{font-weight:700;margin-right:6px}
+.comment-form{display:flex;gap:8px;margin-top:12px}
+.comment-form input{flex:1;border:1px solid var(--border);border-radius:10px;padding:9px 13px;outline:none}
+
+.profile-card{display:flex;align-items:center;gap:14px;border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:24px}
+.avatar{width:48px;height:48px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;flex-shrink:0}
+.profile-points{margin-left:auto;text-align:right}
+.profile-points .num{font-size:20px;font-weight:800;color:var(--primary)}
+.profile-points .lbl{font-size:11.5px;color:var(--sub)}
+
+.section-title{font-size:14px;font-weight:700;margin:22px 0 10px;display:flex;align-items:center;gap:6px}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(25,25,25,.42);display:flex;align-items:center;justify-content:center;z-index:60;padding:20px}
+.modal-card{background:var(--bg);border-radius:14px;padding:24px;max-width:380px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.18)}
+.modal-title{font-size:16px;margin-bottom:6px}
+.modal-actions{display:flex;gap:10px;margin-top:20px}
+.modal-actions .btn{flex:1;justify-content:center}
+
+.toast-host{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:100;align-items:center}
+.toast{background:var(--text);color:#fff;padding:11px 20px;border-radius:10px;font-size:13.5px;box-shadow:0 4px 16px rgba(0,0,0,.2);animation:toastIn .2s ease;white-space:nowrap}
+@keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+@media (max-width:640px){
+  .header-inner{padding:12px 16px}
+  main{padding:18px 16px 50px}
+  .grid{grid-template-columns:1fr}
+  .btn span.label-full{display:none}
+  .logo{font-size:15px}
+}
+</style>
+<script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+<div id="app"></div>
+<div id="toastHost" class="toast-host"></div>
+
+<script>
+/* ============================================================
+   Firebase 연결 (Firestore — 실시간 저장/동기화)
+   ============================================================ */
+const firebaseConfig = {
+  apiKey: "AIzaSyBw2rIBLIWg4uOEdNGlnUoAL4r25U_u73w",
+  authDomain: "spy-document-plaza.firebaseapp.com",
+  projectId: "spy-document-plaza",
+  storageBucket: "spy-document-plaza.firebasestorage.app",
+  messagingSenderId: "260163336293",
+  appId: "1:260163336293:web:66ac60c09bc4bb8f70ee8c",
+  measurementId: "G-2L2FKSS3SJ"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+// 일부 통신망/공유기 환경에서 실시간 스트리밍 연결이 조용히 끊기는 문제 방지
+db.settings({ experimentalAutoDetectLongPolling: true });
+const postsCol = db.collection('posts');
+const notifsCol = db.collection('notifications');
+
+/* ============================================================
+   아이콘 (라인/외곽선, Lucide 스타일 stroke 기반)
+   ============================================================ */
+const Icon = {
+  logo: `<svg class="icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+  search: `<svg class="icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>`,
+  home: `<svg class="icon" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>`,
+  user: `<svg class="icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+  bell: `<svg class="icon" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>`,
+  plus: `<svg class="icon-sm" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`,
+  link: `<svg class="icon-sm" viewBox="0 0 24 24"><path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 1 1 0 10h-2"/><path d="M8 12h8"/></svg>`,
+  users: `<svg class="icon-sm" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+  gift: `<svg class="icon-sm" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/></svg>`,
+  back: `<svg class="icon-sm" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>`,
+  clock: `<svg class="icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>`,
+};
+
+/* ============================================================
+   데이터 (Firestore에서 실시간으로 채워짐)
+   ============================================================ */
+const GAME_ROLES = ['마피아','경찰','의사','스파이','영매','군인','정치인','연인','기자','짐승 인간','건달','사립탐정','도굴꾼','테러리스트','마담','성직자','예언자','판사','도둑','간호사','교주','자경단원','마술사','마녀','과학자','해커','심리학자','광신도','공무원','사기꾼','청부업자','비밀결사','파파라치'];
+
+let posts = [];
+let notifications = [];
+let postsLoaded = false;
+
+// 로그인 기능 붙이기 전까지 쓰는 임시 사용자명 — 다음 단계(Authentication)에서 실제 계정으로 교체 예정
+const currentUser = { name:'찬규' };
+let myParticipations = []; // 참여한 글 id 목록 — 로그인 전까지는 이 브라우저에서만 유지됨
+let readNotifIds = new Set(); // 알림 읽음 표시 — 로그인 전까지는 이 브라우저에서만 유지됨
+
+/* ============================================================
+   상태
+   ============================================================ */
+let state = {
+  view:'home', selectedId:null,
+  keyword:'', roleFilter:'all', statusFilter:'all', sort:'latest',
+  draftRoles:[],
+  modal:null,      // {postId, role, step:1|2, idValue}
+  notifOpen:false
+};
+
+/* ============================================================
+   유틸
+   ============================================================ */
+function relTime(iso){
+  const diffMin = Math.round((Date.now() - new Date(iso).getTime())/60000);
+  if(diffMin < 60) return `${Math.max(diffMin,1)}분 전`;
+  const diffHr = Math.round(diffMin/60);
+  if(diffHr < 24) return `${diffHr}시간 전`;
+  return `${Math.round(diffHr/24)}일 전`;
+}
+function statusBadge(status){
+  return status==='모집중'
+    ? `<span class="badge badge-open">모집중</span>`
+    : `<span class="badge badge-closed">마감</span>`;
+}
+function tagRow(roles){
+  if(!roles.length) return `<div class="tag-row"><span class="tag tag-muted">역할 모두 채움</span></div>`;
+  return `<div class="tag-row">${roles.map(r=>`<span class="tag">${r}</span>`).join('')}</div>`;
+}
+function roleCountLabel(p){
+  return p.roles.length>0 ? `${p.roles.length}개 역할 필요` : '역할 모두 채움';
+}
+function showToast(msg){
+  const host = document.getElementById('toastHost');
+  if(!host) return;
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  host.appendChild(el);
+  setTimeout(()=> el.remove(), 3000);
+}
+function withTimeout(promise, ms=12000){
+  return Promise.race([
+    promise,
+    new Promise((_, reject)=> setTimeout(()=> reject(new Error('timeout')), ms))
+  ]);
+}
+function getFilteredPosts(){
+  let list = posts.filter(p=>{
+    const kw = state.keyword.trim().toLowerCase();
+    const matchKw = !kw || p.title.toLowerCase().includes(kw) || p.desc.toLowerCase().includes(kw);
+    const matchRole = state.roleFilter==='all' || p.roles.includes(state.roleFilter);
+    const matchStatus = state.statusFilter==='all' || p.status===state.statusFilter;
+    return matchKw && matchRole && matchStatus;
+  });
+  if(state.sort==='latest'){
+    list = list.slice().sort((a,b)=> new Date(b.createdAt)-new Date(a.createdAt));
+  } else {
+    list = list.slice().sort((a,b)=>{
+      if(a.status!==b.status) return a.status==='모집중' ? -1 : 1;
+      return a.roles.length - b.roles.length;
+    });
+  }
+  return list;
+}
+
+/* ============================================================
+   렌더 — 헤더
+   ============================================================ */
+function renderNotifPanel(){
+  if(!notifications.length) return `<div class="notif-panel"><div class="notif-empty">아직 알림이 없어요.</div></div>`;
+  return `<div class="notif-panel">${notifications.map(n=>`
+    <div class="notif-item">
+      <div>${n.text}</div>
+      <div class="notif-time">${relTime(n.time)}</div>
+    </div>`).join('')}</div>`;
+}
+function renderHeader(){
+  const unread = notifications.filter(n=>!readNotifIds.has(n.id)).length;
+  return `
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo" data-nav="home">${Icon.logo}<span>스파이의 비밀문서 광장</span></div>
+      <div class="searchbar">
+        ${Icon.search}
+        <input id="searchInput" type="text" placeholder="모집글 검색 (제목, 내용)" value="${state.keyword.replace(/"/g,'&quot;')}">
+      </div>
+      <button class="btn" data-nav="write">${Icon.plus}<span class="label-full">모집글 쓰기</span></button>
+      <div class="nav-icons">
+        <button class="nav-btn ${state.view==='home'?'active':''}" data-nav="home" title="홈">${Icon.home}</button>
+        <div class="notif-wrap">
+          <button class="nav-btn" id="notifBtn" title="알림">${Icon.bell}${unread>0?`<span class="notif-badge">${unread}</span>`:''}</button>
+          ${state.notifOpen ? renderNotifPanel() : ''}
+        </div>
+        <button class="nav-btn ${state.view==='mypage'?'active':''}" data-nav="mypage" title="마이페이지">${Icon.user}</button>
+      </div>
+    </div>
+  </header>`;
+}
+
+/* ============================================================
+   렌더 — 홈
+   ============================================================ */
+function renderHome(){
+  if(!postsLoaded){
+    return `<h1 class="page-title">역할 모집</h1><div class="empty">불러오는 중...</div>`;
+  }
+  const list = getFilteredPosts();
+  const cards = list.map(p=>`
+    <div class="card" data-open="${p.id}">
+      <div class="card-top">
+        <div class="card-title">${p.title}</div>
+        ${statusBadge(p.status)}
+      </div>
+      ${tagRow(p.roles)}
+      <div class="card-meta">
+        <span class="meta-item">${Icon.users}${roleCountLabel(p)}</span>
+        <span class="meta-item">${Icon.gift}${p.reward}</span>
+        <span class="meta-item">${Icon.clock}${relTime(p.createdAt)}</span>
+      </div>
+    </div>
+  `).join('');
+
+  return `
+  <h1 class="page-title">역할 모집</h1>
+  <p class="page-sub">부족한 역할을 올리면, 다른 플레이어가 채워드려요.</p>
+
+  <div class="filter-bar">
+    <select id="roleFilter">
+      <option value="all" ${state.roleFilter==='all'?'selected':''}>전체 역할</option>
+      ${GAME_ROLES.map(r=>`<option value="${r}" ${state.roleFilter===r?'selected':''}>${r}</option>`).join('')}
+    </select>
+    <select id="statusFilter">
+      <option value="all" ${state.statusFilter==='all'?'selected':''}>전체 상태</option>
+      <option value="모집중" ${state.statusFilter==='모집중'?'selected':''}>모집중</option>
+      <option value="마감" ${state.statusFilter==='마감'?'selected':''}>마감</option>
+    </select>
+    <select id="sortSelect">
+      <option value="latest" ${state.sort==='latest'?'selected':''}>최신순</option>
+      <option value="urgent" ${state.sort==='urgent'?'selected':''}>마감임박순</option>
+    </select>
+  </div>
+
+  ${list.length ? `<div class="grid">${cards}</div>` : `<div class="empty">조건에 맞는 모집글이 없어요. 다른 검색어나 필터를 시도해보세요.</div>`}
+  `;
+}
+
+/* ============================================================
+   렌더 — 작성
+   ============================================================ */
+function renderWrite(){
+  return `
+  <button class="back-btn" data-nav="home">${Icon.back}뒤로</button>
+  <h1 class="page-title">모집글 쓰기</h1>
+  <p class="page-sub">방 링크와 필요한 역할을 알려주시면 다른 플레이어가 찾아올 수 있어요.</p>
+
+  <div class="form-wrap">
+    <div class="field">
+      <label>작성자 이름</label>
+      <input id="fAuthor" type="text" value="${currentUser.name}">
+    </div>
+    <div class="field">
+      <label>제목</label>
+      <input id="fTitle" type="text" placeholder="">
+    </div>
+    <div class="field">
+      <label>게임방 링크</label>
+      <input id="fLink" type="url" placeholder="https://mafia42.com/room/...">
+    </div>
+    <div class="field">
+      <label>필요한 역할(직업) <span class="hint">(중복 선택 가능)</span></label>
+      <div class="chip-select" id="roleChips">
+        ${GAME_ROLES.map(r=>`<div class="chip ${state.draftRoles.includes(r)?'selected':''}" data-role="${r}">${r}</div>`).join('')}
+      </div>
+    </div>
+    <div class="field">
+      <label>보상 <span class="hint">(참여자에게 제공)</span></label>
+      <input id="fReward" type="text" placeholder="">
+    </div>
+    <div class="field">
+      <label>설명</label>
+      <textarea id="fDesc" placeholder="룰, 진행 시간, 매너 관련 안내 등을 자유롭게 적어주세요."></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn" id="submitPost">모집글 등록</button>
+      <button class="btn btn-ghost" data-nav="home">취소</button>
+    </div>
+  </div>
+  `;
+}
+
+/* ============================================================
+   렌더 — 상세
+   ============================================================ */
+function renderDetail(){
+  const p = posts.find(x=>x.id===state.selectedId);
+  if(!p) return `<div class="empty">모집글을 찾을 수 없어요.</div>`;
+
+  return `
+  <button class="back-btn" data-nav="home">${Icon.back}목록으로</button>
+  <div class="detail-head">
+    <h1 class="detail-title">${p.title}</h1>
+    ${statusBadge(p.status)}
+  </div>
+  <div class="detail-author">작성자 ${p.author} · ${relTime(p.createdAt)}</div>
+
+  <div class="detail-box" style="margin-top:16px">
+    <h3>게임방 링크</h3>
+    <a class="link-row" href="${p.link}" target="_blank" rel="noopener">${Icon.link}${p.link}</a>
+  </div>
+
+  <div class="detail-box">
+    <h3>필요한 역할</h3>
+    ${p.roles.length ? p.roles.map(r=>`
+      <div class="role-fill-row">
+        <span class="tag">${r}</span>
+        <button class="btn btn-sub btn-sm" data-apply="${p.id}|${r}">참여하기</button>
+      </div>
+    `).join('') : `<p style="color:var(--sub);font-size:13.5px">모든 역할이 채워졌어요.</p>`}
+  </div>
+
+  <div class="detail-box">
+    <h3>보상</h3>
+    <span class="meta-item" style="color:var(--text);font-weight:700;font-size:15px">${Icon.gift}${p.reward}</span>
+  </div>
+
+  <div class="detail-box">
+    <h3>설명</h3>
+    <p class="desc-text">${p.desc}</p>
+  </div>
+
+  ${p.fills.length ? `
+  <div class="detail-box">
+    <h3>채워진 역할</h3>
+    ${p.fills.map(f=>`<div class="comment"><span class="comment-author">${f.role}</span>${f.applicant}</div>`).join('')}
+  </div>` : ''}
+
+  <div class="detail-box" style="margin-top:16px">
+    <h3>댓글 ${p.comments.length}</h3>
+    ${p.comments.map(c=>`<div class="comment"><span class="comment-author">${c.author}</span>${c.text}</div>`).join('') || '<p style="color:var(--sub);font-size:13.5px">아직 댓글이 없어요.</p>'}
+    <div class="comment-form">
+      <input id="commentInput" type="text" placeholder="댓글을 남겨보세요">
+      <button class="btn btn-sub" id="commentBtn">등록</button>
+    </div>
+  </div>
+  `;
+}
+
+/* ============================================================
+   렌더 — 마이페이지
+   ============================================================ */
+function renderMyPage(){
+  const myPosts = posts.filter(p=>p.author===currentUser.name);
+  const joinedPosts = posts.filter(p=>myParticipations.includes(p.id));
+
+  const cardMini = p => `
+    <div class="card" data-open="${p.id}">
+      <div class="card-top"><div class="card-title">${p.title}</div>${statusBadge(p.status)}</div>
+      ${tagRow(p.roles)}
+      <div class="card-meta">
+        <span class="meta-item">${Icon.users}${roleCountLabel(p)}</span>
+        <span class="meta-item">${Icon.gift}${p.reward}</span>
+      </div>
+    </div>`;
+
+  return `
+  <h1 class="page-title">마이페이지</h1>
+  <p class="page-sub">내가 쓴 글과 참여한 모집글을 한눈에 확인해요.</p>
+
+  <div class="profile-card">
+    <div class="avatar">${currentUser.name[0]}</div>
+    <div>
+      <div style="font-weight:700;font-size:15px">${currentUser.name}</div>
+      <div style="color:var(--sub);font-size:12.5px">롤메이트 멤버</div>
+    </div>
+    <div class="profile-points">
+      <div class="num">${joinedPosts.length}건</div>
+      <div class="lbl">참여 완료</div>
+    </div>
+  </div>
+
+  <div class="section-title">${Icon.home} 내가 쓴 모집글 (${myPosts.length})</div>
+  ${myPosts.length ? `<div class="grid">${myPosts.map(cardMini).join('')}</div>` : `<div class="empty">아직 작성한 모집글이 없어요.</div>`}
+
+  <div class="section-title">${Icon.users} 참여한 모집글 (${joinedPosts.length})</div>
+  ${joinedPosts.length ? `<div class="grid">${joinedPosts.map(cardMini).join('')}</div>` : `<div class="empty">아직 참여한 모집글이 없어요.</div>`}
+  `;
+}
+
+/* ============================================================
+   렌더 — 참여 신청 모달
+   ============================================================ */
+function renderModal(){
+  const m = state.modal;
+  if(!m) return '';
+  const p = posts.find(x=>x.id===m.postId);
+  if(!p) return '';
+
+  if(m.step===1){
+    return `
+    <div class="modal-overlay">
+      <div class="modal-card">
+        <h3 class="modal-title">참여 신청 — ${m.role}</h3>
+        <p class="page-sub" style="margin-bottom:14px">어떤 아이디로 참여하실 건가요?</p>
+        <input id="applyIdInput" type="text" placeholder="" value="${m.idValue.replace(/"/g,'&quot;')}"
+          style="width:100%;border:1px solid var(--border);border-radius:10px;padding:11px 13px;outline:none;margin-bottom:6px">
+        <div class="modal-actions">
+          <button class="btn btn-ghost" id="modalCancel">취소</button>
+          <button class="btn" id="modalNext">다음</button>
+        </div>
+      </div>
+    </div>`;
+  }
+  return `
+  <div class="modal-overlay">
+    <div class="modal-card">
+      <h3 class="modal-title">실제로 이벤트에 참여해 주었나요?</h3>
+      <p class="page-sub" style="margin-bottom:6px">'${p.title}'의 <b style="color:var(--text)">${m.role}</b> 역할로 등록할게요.</p>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="modalBack">이전</button>
+        <button class="btn" id="modalConfirm">확인하기</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ============================================================
+   메인 렌더 + 라우팅
+   ============================================================ */
+function render(){
+  const app = document.getElementById('app');
+  let body = '';
+  if(state.view==='home') body = renderHome();
+  else if(state.view==='write') body = renderWrite();
+  else if(state.view==='detail') body = renderDetail();
+  else if(state.view==='mypage') body = renderMyPage();
+
+  app.innerHTML = `${renderHeader()}<main>${body}</main>${renderModal()}`;
+  bindEvents();
+}
+
+function goTo(view, id){
+  state.view = view;
+  if(id!==undefined) state.selectedId = id;
+  if(view==='write') state.draftRoles = [];
+  state.notifOpen = false;
+  window.scrollTo(0,0);
+  render();
+}
+
+/* ============================================================
+   이벤트 바인딩
+   ============================================================ */
+function bindEvents(){
+  document.querySelectorAll('[data-nav]').forEach(el=>{
+    el.addEventListener('click', ()=> goTo(el.dataset.nav));
+  });
+  document.querySelectorAll('[data-open]').forEach(el=>{
+    el.addEventListener('click', ()=> goTo('detail', el.dataset.open));
+  });
+
+  const notifBtn = document.getElementById('notifBtn');
+  if(notifBtn){
+    notifBtn.addEventListener('click', ()=>{
+      state.notifOpen = !state.notifOpen;
+      if(state.notifOpen) notifications.forEach(n=> readNotifIds.add(n.id));
+      render();
+    });
+  }
+
+  const searchInput = document.getElementById('searchInput');
+  if(searchInput){
+    searchInput.addEventListener('input', e=>{ state.keyword = e.target.value; render(); searchInput.focus(); searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length); });
+  }
+  const roleFilter = document.getElementById('roleFilter');
+  if(roleFilter) roleFilter.addEventListener('change', e=>{ state.roleFilter = e.target.value; render(); });
+  const statusFilter = document.getElementById('statusFilter');
+  if(statusFilter) statusFilter.addEventListener('change', e=>{ state.statusFilter = e.target.value; render(); });
+  const sortSelect = document.getElementById('sortSelect');
+  if(sortSelect) sortSelect.addEventListener('change', e=>{ state.sort = e.target.value; render(); });
+
+  document.querySelectorAll('.chip[data-role]').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      const r = chip.dataset.role;
+      state.draftRoles = state.draftRoles.includes(r) ? state.draftRoles.filter(x=>x!==r) : [...state.draftRoles, r];
+      chip.classList.toggle('selected');
+    });
+  });
+
+  const submitPost = document.getElementById('submitPost');
+  if(submitPost){
+    submitPost.addEventListener('click', async ()=>{
+      const author = document.getElementById('fAuthor').value.trim();
+      const title = document.getElementById('fTitle').value.trim();
+      const link = document.getElementById('fLink').value.trim();
+      if(!author || !title || !link || !state.draftRoles.length){ alert('작성자 이름, 제목, 게임방 링크, 필요한 역할은 꼭 입력해주세요.'); return; }
+      submitPost.disabled = true;
+      submitPost.textContent = '등록 중...';
+      try{
+        await withTimeout(postsCol.add({
+          title, link,
+          roles: [...state.draftRoles],
+          reward: document.getElementById('fReward').value.trim(),
+          status: '모집중',
+          author,
+          createdAt: new Date().toISOString(),
+          desc: document.getElementById('fDesc').value.trim() || '설명이 없습니다.',
+          comments: [],
+          fills: []
+        }));
+        state.keyword=''; state.roleFilter='all'; state.statusFilter='all';
+        goTo('home');
+      }catch(err){
+        alert('저장 실패: ' + (err && (err.code || err.message) || err));
+        submitPost.disabled = false;
+        submitPost.textContent = '모집글 등록';
+      }
+    });
+  }
+
+  document.querySelectorAll('[data-apply]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const [postId, role] = btn.dataset.apply.split('|');
+      state.modal = { postId, role, step:1, idValue:'' };
+      render();
+    });
+  });
+
+  const applyIdInput = document.getElementById('applyIdInput');
+  if(applyIdInput){
+    applyIdInput.addEventListener('input', e=>{ state.modal.idValue = e.target.value; });
+  }
+  const modalCancel = document.getElementById('modalCancel');
+  if(modalCancel) modalCancel.addEventListener('click', ()=>{ state.modal = null; render(); });
+  const modalBack = document.getElementById('modalBack');
+  if(modalBack) modalBack.addEventListener('click', ()=>{ state.modal.step = 1; render(); });
+  const modalNext = document.getElementById('modalNext');
+  if(modalNext){
+    modalNext.addEventListener('click', ()=>{
+      if(!state.modal.idValue.trim()){ alert('아이디를 입력해주세요.'); return; }
+      state.modal.step = 2;
+      render();
+    });
+  }
+  const modalConfirm = document.getElementById('modalConfirm');
+  if(modalConfirm){
+    modalConfirm.addEventListener('click', async ()=>{
+      const { postId, role, idValue } = state.modal;
+      const p = posts.find(x=>x.id===postId);
+      if(!p) return;
+      modalConfirm.disabled = true;
+      try{
+        const newRoles = p.roles.filter(r=>r!==role);
+        const newFills = [...p.fills, { role, applicant: idValue.trim() }];
+        const newStatus = newRoles.length===0 ? '마감' : '모집중';
+        await withTimeout(db.collection('posts').doc(postId).update({ roles:newRoles, fills:newFills, status:newStatus }));
+        await withTimeout(notifsCol.add({
+          text: `${idValue.trim()}님이 "${p.title}"의 [${role}] 역할을 채워주셨어요.`,
+          time: new Date().toISOString()
+        }));
+        if(!myParticipations.includes(p.id)) myParticipations.push(p.id);
+        showToast('참여가 확인됐어요! 감사합니다 🙌');
+        state.modal = null;
+        render();
+      }catch(err){
+        alert('처리 실패: ' + (err && (err.code || err.message) || err));
+        modalConfirm.disabled = false;
+      }
+    });
+  }
+
+  const commentBtn = document.getElementById('commentBtn');
+  if(commentBtn){
+    commentBtn.addEventListener('click', async ()=>{
+      const input = document.getElementById('commentInput');
+      const text = input.value.trim();
+      if(!text) return;
+      const p = posts.find(x=>x.id===state.selectedId);
+      if(!p) return;
+      commentBtn.disabled = true;
+      try{
+        await withTimeout(db.collection('posts').doc(p.id).update({ comments: firebase.firestore.FieldValue.arrayUnion({author:currentUser.name, text}) }));
+        input.value = '';
+      }catch(err){
+        alert('댓글 등록 실패: ' + (err && (err.code || err.message) || err));
+      }
+      commentBtn.disabled = false;
+    });
+  }
+}
+
+/* ============================================================
+   Firestore 실시간 구독
+   ============================================================ */
+postsCol.onSnapshot(snapshot=>{
+  posts = snapshot.docs.map(d=>({ id:d.id, ...d.data() }));
+  postsLoaded = true;
+  render();
+}, err=>{
+  postsLoaded = true;
+  console.error('posts 구독 실패', err);
+  render();
+});
+
+notifsCol.onSnapshot(snapshot=>{
+  notifications = snapshot.docs.map(d=>({ id:d.id, ...d.data() }))
+    .sort((a,b)=> new Date(b.time) - new Date(a.time));
+  render();
+}, err=> console.error('notifications 구독 실패', err));
+
+render();
+</script>
+</body>
+</html>
