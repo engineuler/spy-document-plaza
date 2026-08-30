@@ -188,7 +188,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 // 일부 통신망/공유기 환경에서 실시간 스트리밍 연결이 조용히 끊기는 문제 방지
-db.settings({ experimentalAutoDetectLongPolling: true });
+db.settings({ experimentalForceLongPolling: true, useFetchStreams: false });
 const postsCol = db.collection('posts');
 const notifsCol = db.collection('notifications');
 
@@ -265,7 +265,7 @@ function showToast(msg){
   host.appendChild(el);
   setTimeout(()=> el.remove(), 3000);
 }
-function withTimeout(promise, ms=12000){
+function withTimeout(promise, ms=20000){
   return Promise.race([
     promise,
     new Promise((_, reject)=> setTimeout(()=> reject(new Error('timeout')), ms))
