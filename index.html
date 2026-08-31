@@ -170,7 +170,7 @@ main{flex:1;max-width:1080px;width:100%;margin:0 auto;padding:24px 20px 60px}
 <body>
 <div id="app"></div>
 <div id="toastHost" class="toast-host"></div>
-<div style="position:fixed;left:8px;bottom:6px;font-size:11px;color:#bbb;z-index:5;font-family:sans-serif">build v14</div>
+<div style="position:fixed;left:8px;bottom:6px;font-size:11px;color:#bbb;z-index:5;font-family:sans-serif">build v16</div>
 <button id="diagBtn" style="position:fixed;right:8px;bottom:6px;font-size:11px;color:#fff;background:#191919;border:none;border-radius:6px;padding:5px 9px;z-index:5;font-family:sans-serif">진단</button>
 
 <script>
@@ -178,17 +178,17 @@ main{flex:1;max-width:1080px;width:100%;margin:0 auto;padding:24px 20px 60px}
    Firebase 연결 (Firestore — 실시간 저장/동기화)
    ============================================================ */
 const firebaseConfig = {
-  apiKey: "AIzaSyA_ER-AsM4NEzKgFLbyRZRAIcE2-_4vfDI",
-  authDomain: "spy-document-plaza.firebaseapp.com",
-  projectId: "spy-document-plaza",
-  storageBucket: "spy-document-plaza.firebasestorage.app",
-  messagingSenderId: "260163336293",
-  appId: "1:260163336293:web:66ac60c09bc4bb8f70ee8c",
-  measurementId: "G-2L2FKSS3SJ"
+  apiKey: "AIzaSyBmDLvF1sIYxIZhTFjVi0M3C1Wk_GhWHic",
+  authDomain: "spy-document-plaz.firebaseapp.com",
+  projectId: "spy-document-plaz",
+  storageBucket: "spy-document-plaz.firebasestorage.app",
+  messagingSenderId: "796377225314",
+  appId: "1:796377225314:web:7b624446f6bc00895dd93b",
+  measurementId: "G-VHVJTRSK17"
 };
 
 firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore(firebase.app(), 'spy-document-plaza');
+const db = firebase.firestore();
 // 일부 통신망/공유기 환경에서 실시간 스트리밍 연결이 조용히 끊기는 문제 방지
 db.settings({ experimentalForceLongPolling: true, useFetchStreams: false });
 const postsCol = db.collection('posts');
@@ -739,7 +739,7 @@ notifsCol.onSnapshot(snapshot=>{
 function runDiagnostic(){
   const btn = document.getElementById('diagBtn');
   btn.textContent = '확인 중...';
-  const url = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/spy-document-plaza/documents/diagnostic?key=${firebaseConfig.apiKey}`;
+  const url = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents/diagnostic?key=${firebaseConfig.apiKey}`;
   withTimeout(
     fetch(url, { method: 'GET' }),
     10000
