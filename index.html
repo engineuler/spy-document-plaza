@@ -170,7 +170,7 @@ main{flex:1;max-width:1080px;width:100%;margin:0 auto;padding:24px 20px 60px}
 <body>
 <div id="app"></div>
 <div id="toastHost" class="toast-host"></div>
-<div style="position:fixed;left:8px;bottom:6px;font-size:11px;color:#bbb;z-index:5;font-family:sans-serif">build v8</div>
+<div style="position:fixed;left:8px;bottom:6px;font-size:11px;color:#bbb;z-index:5;font-family:sans-serif">build v9</div>
 <button id="diagBtn" style="position:fixed;right:8px;bottom:6px;font-size:11px;color:#fff;background:#191919;border:none;border-radius:6px;padding:5px 9px;z-index:5;font-family:sans-serif">진단</button>
 
 <script>
@@ -739,7 +739,7 @@ notifsCol.onSnapshot(snapshot=>{
 function runDiagnostic(){
   const btn = document.getElementById('diagBtn');
   btn.textContent = '확인 중...';
-  const url = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents/diagnostic?key=${firebaseConfig.apiKey}`;
+  const url = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/spy-document-plaza/documents/diagnostic?key=${firebaseConfig.apiKey}`;
   withTimeout(
     fetch(url, {
       method: 'POST',
