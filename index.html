@@ -170,19 +170,21 @@ main{flex:1;max-width:1080px;width:100%;margin:0 auto;padding:24px 20px 60px}
 <body>
 <div id="app"></div>
 <div id="toastHost" class="toast-host"></div>
+<div style="position:fixed;left:8px;bottom:6px;font-size:11px;color:#bbb;z-index:5;font-family:sans-serif">build v17</div>
+<button id="diagBtn" style="position:fixed;right:8px;bottom:6px;font-size:11px;color:#fff;background:#191919;border:none;border-radius:6px;padding:5px 9px;z-index:5;font-family:sans-serif">진단</button>
 
 <script>
 /* ============================================================
    Firebase 연결 (Firestore — 실시간 저장/동기화)
    ============================================================ */
 const firebaseConfig = {
-  apiKey: "AIzaSyBw2rIBLIWg4uOEdNGlnUoAL4r25U_u73w",
-  authDomain: "spy-document-plaza.firebaseapp.com",
-  projectId: "spy-document-plaza",
-  storageBucket: "spy-document-plaza.firebasestorage.app",
-  messagingSenderId: "260163336293",
-  appId: "1:260163336293:web:66ac60c09bc4bb8f70ee8c",
-  measurementId: "G-2L2FKSS3SJ"
+  apiKey: "AIzaSyBmDLvF1sIYxIZhTFjVi0M3C1Wk_GhWHic",
+  authDomain: "spy-document-plaz.firebaseapp.com",
+  projectId: "spy-document-plaz",
+  storageBucket: "spy-document-plaz.firebasestorage.app",
+  messagingSenderId: "796377225314",
+  appId: "1:796377225314:web:7b624446f6bc00895dd93b",
+  measurementId: "G-VHVJTRSK17"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -220,8 +222,9 @@ let postsLoaded = false;
 
 // 로그인 기능 붙이기 전까지 쓰는 임시 사용자명 — 다음 단계(Authentication)에서 실제 계정으로 교체 예정
 const currentUser = { name:'찬규' };
-let myParticipations = []; // 참여한 글 id 목록 — 로그인 전까지는 이 브라우저에서만 유지됨
+let myParticipations = JSON.parse(localStorage.getItem('myParticipations') || '[]'); // 참여한 글 id 목록 — 이 브라우저에 저장됨(로그인 붙이면 계정 기준으로 개선 예정)
 let readNotifIds = new Set(); // 알림 읽음 표시 — 로그인 전까지는 이 브라우저에서만 유지됨
+let locks = { submitPost:false, modalConfirm:false, comment:false }; // 중복 클릭(연타) 방지용
 
 /* ============================================================
    상태
@@ -408,7 +411,7 @@ function renderWrite(){
       <textarea id="fDesc" placeholder="룰, 진행 시간, 매너 관련 안내 등을 자유롭게 적어주세요."></textarea>
     </div>
     <div class="form-actions">
-      <button class="btn" id="submitPost">모집글 등록</button>
+      <button class="btn" id="submitPost" ${locks.submitPost?'disabled':''}>${locks.submitPost?'등록 중...':'모집글 등록'}</button>
       <button class="btn btn-ghost" data-nav="home">취소</button>
     </div>
   </div>
@@ -466,7 +469,7 @@ function renderDetail(){
     ${p.comments.map(c=>`<div class="comment"><span class="comment-author">${c.author}</span>${c.text}</div>`).join('') || '<p style="color:var(--sub);font-size:13.5px">아직 댓글이 없어요.</p>'}
     <div class="comment-form">
       <input id="commentInput" type="text" placeholder="댓글을 남겨보세요">
-      <button class="btn btn-sub" id="commentBtn">등록</button>
+      <button class="btn btn-sub" id="commentBtn" ${locks.comment?'disabled':''}>${locks.comment?'등록 중':'등록'}</button>
     </div>
   </div>
   `;
@@ -544,7 +547,7 @@ function renderModal(){
       <p class="page-sub" style="margin-bottom:6px">'${p.title}'의 <b style="color:var(--text)">${m.role}</b> 역할로 등록할게요.</p>
       <div class="modal-actions">
         <button class="btn btn-ghost" id="modalBack">이전</button>
-        <button class="btn" id="modalConfirm">확인하기</button>
+        <button class="btn" id="modalConfirm" ${locks.modalConfirm?'disabled':''}>${locks.modalConfirm?'처리 중...':'확인하기'}</button>
       </div>
     </div>
   </div>`;
@@ -616,12 +619,13 @@ function bindEvents(){
   const submitPost = document.getElementById('submitPost');
   if(submitPost){
     submitPost.addEventListener('click', async ()=>{
+      if(locks.submitPost) return;
       const author = document.getElementById('fAuthor').value.trim();
       const title = document.getElementById('fTitle').value.trim();
       const link = document.getElementById('fLink').value.trim();
       if(!author || !title || !link || !state.draftRoles.length){ alert('작성자 이름, 제목, 게임방 링크, 필요한 역할은 꼭 입력해주세요.'); return; }
-      submitPost.disabled = true;
-      submitPost.textContent = '등록 중...';
+      locks.submitPost = true;
+      render();
       try{
         await withTimeout(postsCol.add({
           title, link,
@@ -634,12 +638,13 @@ function bindEvents(){
           comments: [],
           fills: []
         }));
+        locks.submitPost = false;
         state.keyword=''; state.roleFilter='all'; state.statusFilter='all';
         goTo('home');
       }catch(err){
+        locks.submitPost = false;
         alert('저장 실패: ' + (err && (err.code || err.message) || err));
-        submitPost.disabled = false;
-        submitPost.textContent = '모집글 등록';
+        render();
       }
     });
   }
@@ -671,10 +676,12 @@ function bindEvents(){
   const modalConfirm = document.getElementById('modalConfirm');
   if(modalConfirm){
     modalConfirm.addEventListener('click', async ()=>{
+      if(locks.modalConfirm) return;
       const { postId, role, idValue } = state.modal;
       const p = posts.find(x=>x.id===postId);
       if(!p) return;
-      modalConfirm.disabled = true;
+      locks.modalConfirm = true;
+      render();
       try{
         const newRoles = p.roles.filter(r=>r!==role);
         const newFills = [...p.fills, { role, applicant: idValue.trim() }];
@@ -684,13 +691,18 @@ function bindEvents(){
           text: `${idValue.trim()}님이 "${p.title}"의 [${role}] 역할을 채워주셨어요.`,
           time: new Date().toISOString()
         }));
-        if(!myParticipations.includes(p.id)) myParticipations.push(p.id);
+        if(!myParticipations.includes(p.id)){
+          myParticipations.push(p.id);
+          localStorage.setItem('myParticipations', JSON.stringify(myParticipations));
+        }
+        locks.modalConfirm = false;
         showToast('참여가 확인됐어요! 감사합니다 🙌');
         state.modal = null;
         render();
       }catch(err){
+        locks.modalConfirm = false;
         alert('처리 실패: ' + (err && (err.code || err.message) || err));
-        modalConfirm.disabled = false;
+        render();
       }
     });
   }
@@ -698,19 +710,21 @@ function bindEvents(){
   const commentBtn = document.getElementById('commentBtn');
   if(commentBtn){
     commentBtn.addEventListener('click', async ()=>{
+      if(locks.comment) return;
       const input = document.getElementById('commentInput');
       const text = input.value.trim();
       if(!text) return;
       const p = posts.find(x=>x.id===state.selectedId);
       if(!p) return;
-      commentBtn.disabled = true;
+      locks.comment = true;
+      render();
       try{
         await withTimeout(db.collection('posts').doc(p.id).update({ comments: firebase.firestore.FieldValue.arrayUnion({author:currentUser.name, text}) }));
-        input.value = '';
       }catch(err){
         alert('댓글 등록 실패: ' + (err && (err.code || err.message) || err));
       }
-      commentBtn.disabled = false;
+      locks.comment = false;
+      render();
     });
   }
 }
@@ -733,6 +747,24 @@ notifsCol.onSnapshot(snapshot=>{
     .sort((a,b)=> new Date(b.time) - new Date(a.time));
   render();
 }, err=> console.error('notifications 구독 실패', err));
+
+function runDiagnostic(){
+  const btn = document.getElementById('diagBtn');
+  btn.textContent = '확인 중...';
+  const url = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents/diagnostic?key=${firebaseConfig.apiKey}`;
+  withTimeout(
+    fetch(url, { method: 'GET' }),
+    10000
+  ).then(async res=>{
+    const text = await res.text();
+    btn.textContent = '진단';
+    alert('REST 진단 결과 — 상태코드: ' + res.status + '\n응답: ' + text.slice(0,500));
+  }).catch(err=>{
+    btn.textContent = '진단';
+    alert('REST 진단 실패: ' + (err && err.message || err));
+  });
+}
+document.getElementById('diagBtn').addEventListener('click', runDiagnostic);
 
 render();
 </script>
