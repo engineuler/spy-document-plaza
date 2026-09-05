@@ -48,6 +48,7 @@ a{color:inherit}
 .btn-block{width:100%;justify-content:center}
 .btn-sm{padding:7px 14px;font-size:12.5px;border-radius:8px}
 .btn:disabled{opacity:.45;cursor:not-allowed}
+.link-btn{background:none;border:none;color:var(--primary);font-weight:700;cursor:pointer;font-size:13px;padding:0}
 
 #app{min-height:100vh;display:flex;flex-direction:column}
 
@@ -72,6 +73,10 @@ a{color:inherit}
 .notif-item:hover{background:var(--surface)}
 .notif-empty{padding:20px;text-align:center;color:var(--sub);font-size:13px}
 .notif-time{font-size:11px;color:var(--sub);margin-top:2px}
+
+.user-chip{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding-left:6px}
+.user-chip .nickname{max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badge-admin{background:var(--text);color:#fff}
 
 main{flex:1;max-width:1080px;width:100%;margin:0 auto;padding:24px 20px 60px}
 
@@ -106,7 +111,7 @@ main{flex:1;max-width:1080px;width:100%;margin:0 auto;padding:24px 20px 60px}
 .field{margin-bottom:18px}
 .field label{display:block;font-size:13px;font-weight:700;margin-bottom:7px}
 .field .hint{font-weight:400;color:var(--sub);font-size:12px;margin-left:4px}
-.field input[type=text],.field input[type=url],.field textarea{
+.field input[type=text],.field input[type=url],.field input[type=email],.field input[type=password],.field textarea{
   width:100%;border:1px solid var(--border);border-radius:10px;padding:11px 13px;outline:none;background:var(--bg);
 }
 .field input:focus,.field textarea:focus,.field select:focus{border-color:var(--primary)}
@@ -121,7 +126,7 @@ main{flex:1;max-width:1080px;width:100%;margin:0 auto;padding:24px 20px 60px}
 
 .detail-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px}
 .detail-title{font-size:21px;line-height:1.4}
-.detail-author{color:var(--sub);font-size:13px;margin-bottom:18px;display:flex;gap:10px;align-items:center}
+.detail-author{color:var(--sub);font-size:13px;margin-bottom:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 
 .detail-box{border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px}
 .detail-box h3{font-size:13px;color:var(--sub);font-weight:700;margin-bottom:10px}
@@ -138,7 +143,7 @@ main{flex:1;max-width:1080px;width:100%;margin:0 auto;padding:24px 20px 60px}
 .comment-form{display:flex;gap:8px;margin-top:12px}
 .comment-form input{flex:1;border:1px solid var(--border);border-radius:10px;padding:9px 13px;outline:none}
 
-.profile-card{display:flex;align-items:center;gap:14px;border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:24px}
+.profile-card{display:flex;align-items:center;gap:14px;border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:24px;flex-wrap:wrap}
 .avatar{width:48px;height:48px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;flex-shrink:0}
 .profile-points{margin-left:auto;text-align:right}
 .profile-points .num{font-size:20px;font-weight:800;color:var(--primary)}
@@ -162,20 +167,22 @@ main{flex:1;max-width:1080px;width:100%;margin:0 auto;padding:24px 20px 60px}
   .grid{grid-template-columns:1fr}
   .btn span.label-full{display:none}
   .logo{font-size:15px}
+  .user-chip .nickname{max-width:60px}
 }
 </style>
 <script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-auth-compat.js"></script>
 </head>
 <body>
 <div id="app"></div>
 <div id="toastHost" class="toast-host"></div>
-<div style="position:fixed;left:8px;bottom:6px;font-size:11px;color:#bbb;z-index:5;font-family:sans-serif">build v17</div>
+<div style="position:fixed;left:8px;bottom:6px;font-size:11px;color:#bbb;z-index:5;font-family:sans-serif">build v18</div>
 <button id="diagBtn" style="position:fixed;right:8px;bottom:6px;font-size:11px;color:#fff;background:#191919;border:none;border-radius:6px;padding:5px 9px;z-index:5;font-family:sans-serif">진단</button>
 
 <script>
 /* ============================================================
-   Firebase 연결 (Firestore — 실시간 저장/동기화)
+   Firebase 연결 (Firestore + Authentication)
    ============================================================ */
 const firebaseConfig = {
   apiKey: "AIzaSyBmDLvF1sIYxIZhTFjVi0M3C1Wk_GhWHic",
@@ -191,8 +198,10 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 // 일부 통신망/공유기 환경에서 실시간 스트리밍 연결이 조용히 끊기는 문제 방지
 db.settings({ experimentalForceLongPolling: true, useFetchStreams: false });
+const auth = firebase.auth();
 const postsCol = db.collection('posts');
 const notifsCol = db.collection('notifications');
+const usersCol = db.collection('users');
 
 /* ============================================================
    아이콘 (라인/외곽선, Lucide 스타일 stroke 기반)
@@ -209,6 +218,8 @@ const Icon = {
   gift: `<svg class="icon-sm" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/></svg>`,
   back: `<svg class="icon-sm" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>`,
   clock: `<svg class="icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>`,
+  trash: `<svg class="icon-sm" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>`,
+  logout: `<svg class="icon-sm" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>`,
 };
 
 /* ============================================================
@@ -219,12 +230,10 @@ const GAME_ROLES = ['마피아','경찰','의사','스파이','영매','군인',
 let posts = [];
 let notifications = [];
 let postsLoaded = false;
-
-// 로그인 기능 붙이기 전까지 쓰는 임시 사용자명 — 다음 단계(Authentication)에서 실제 계정으로 교체 예정
-const currentUser = { name:'찬규' };
-let myParticipations = JSON.parse(localStorage.getItem('myParticipations') || '[]'); // 참여한 글 id 목록 — 이 브라우저에 저장됨(로그인 붙이면 계정 기준으로 개선 예정)
+let currentUser = null; // {uid, email, nickname, isAdmin} — 로그인 안 하면 null
+let profileUnsub = null;
 let readNotifIds = new Set(); // 알림 읽음 표시 — 로그인 전까지는 이 브라우저에서만 유지됨
-let locks = { submitPost:false, modalConfirm:false, comment:false }; // 중복 클릭(연타) 방지용
+let locks = { submitPost:false, modalConfirm:false, comment:false, authSubmit:false, deletePost:false }; // 중복 클릭(연타) 방지용
 
 /* ============================================================
    상태
@@ -233,8 +242,9 @@ let state = {
   view:'home', selectedId:null,
   keyword:'', roleFilter:'all', statusFilter:'all', sort:'latest',
   draftRoles:[],
-  modal:null,      // {postId, role, step:1|2, idValue}
-  notifOpen:false
+  modal:null,      // {postId, role}
+  notifOpen:false,
+  authMode:'login' // 'login' | 'signup'
 };
 
 /* ============================================================
@@ -292,6 +302,12 @@ function getFilteredPosts(){
   }
   return list;
 }
+function requireLogin(){
+  if(currentUser) return true;
+  showToast('로그인이 필요해요.');
+  goTo('auth');
+  return false;
+}
 
 /* ============================================================
    렌더 — 헤더
@@ -322,6 +338,13 @@ function renderHeader(){
           ${state.notifOpen ? renderNotifPanel() : ''}
         </div>
         <button class="nav-btn ${state.view==='mypage'?'active':''}" data-nav="mypage" title="마이페이지">${Icon.user}</button>
+        ${currentUser ? `
+          <div class="user-chip">
+            <span class="nickname">${currentUser.nickname}</span>
+            ${currentUser.isAdmin ? `<span class="badge badge-admin">관리자</span>` : ''}
+            <button class="nav-btn" id="logoutBtn" title="로그아웃">${Icon.logout}</button>
+          </div>
+        ` : `<button class="btn btn-sub btn-sm" data-nav="auth">로그인</button>`}
       </div>
     </div>
   </header>`;
@@ -378,16 +401,20 @@ function renderHome(){
    렌더 — 작성
    ============================================================ */
 function renderWrite(){
+  if(!currentUser){
+    return `
+    <button class="back-btn" data-nav="home">${Icon.back}뒤로</button>
+    <div class="empty">
+      로그인 후 모집글을 쓸 수 있어요.<br><br>
+      <button class="btn" data-nav="auth">로그인 하러 가기</button>
+    </div>`;
+  }
   return `
   <button class="back-btn" data-nav="home">${Icon.back}뒤로</button>
   <h1 class="page-title">모집글 쓰기</h1>
   <p class="page-sub">방 링크와 필요한 역할을 알려주시면 다른 플레이어가 찾아올 수 있어요.</p>
 
   <div class="form-wrap">
-    <div class="field">
-      <label>작성자 이름</label>
-      <input id="fAuthor" type="text" value="${currentUser.name}">
-    </div>
     <div class="field">
       <label>제목</label>
       <input id="fTitle" type="text" placeholder="">
@@ -419,11 +446,47 @@ function renderWrite(){
 }
 
 /* ============================================================
+   렌더 — 로그인 / 회원가입
+   ============================================================ */
+function renderAuth(){
+  const isLogin = state.authMode==='login';
+  return `
+  <button class="back-btn" data-nav="home">${Icon.back}뒤로</button>
+  <h1 class="page-title">${isLogin ? '로그인' : '회원가입'}</h1>
+  <p class="page-sub">${isLogin ? '이메일과 비밀번호로 로그인해요.' : '이메일, 비밀번호, 닉네임으로 가입해요.'}</p>
+
+  <div class="form-wrap">
+    ${!isLogin ? `
+    <div class="field">
+      <label>닉네임</label>
+      <input id="authNickname" type="text" placeholder="">
+    </div>` : ''}
+    <div class="field">
+      <label>이메일</label>
+      <input id="authEmail" type="email" placeholder="">
+    </div>
+    <div class="field">
+      <label>비밀번호 <span class="hint">(6자 이상)</span></label>
+      <input id="authPassword" type="password" placeholder="">
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-block" id="authSubmit" ${locks.authSubmit?'disabled':''}>${locks.authSubmit?'처리 중...':(isLogin?'로그인':'회원가입')}</button>
+    </div>
+    <p class="page-sub" style="margin-top:14px">
+      ${isLogin ? '계정이 없으신가요?' : '이미 계정이 있으신가요?'}
+      <button class="link-btn" id="authToggle">${isLogin ? '회원가입' : '로그인'}</button>
+    </p>
+  </div>
+  `;
+}
+
+/* ============================================================
    렌더 — 상세
    ============================================================ */
 function renderDetail(){
   const p = posts.find(x=>x.id===state.selectedId);
   if(!p) return `<div class="empty">모집글을 찾을 수 없어요.</div>`;
+  const canManage = currentUser && (currentUser.isAdmin || currentUser.uid===p.authorUid);
 
   return `
   <button class="back-btn" data-nav="home">${Icon.back}목록으로</button>
@@ -431,9 +494,12 @@ function renderDetail(){
     <h1 class="detail-title">${p.title}</h1>
     ${statusBadge(p.status)}
   </div>
-  <div class="detail-author">작성자 ${p.author} · ${relTime(p.createdAt)}</div>
+  <div class="detail-author">
+    작성자 ${p.author} · ${relTime(p.createdAt)}
+    ${canManage ? `<button class="btn btn-ghost btn-sm" id="deletePostBtn" style="color:var(--danger);border-color:var(--danger)">${Icon.trash}삭제</button>` : ''}
+  </div>
 
-  <div class="detail-box" style="margin-top:16px">
+  <div class="detail-box" style="margin-top:4px">
     <h3>게임방 링크</h3>
     <a class="link-row" href="${p.link}" target="_blank" rel="noopener">${Icon.link}${p.link}</a>
   </div>
@@ -467,10 +533,11 @@ function renderDetail(){
   <div class="detail-box" style="margin-top:16px">
     <h3>댓글 ${p.comments.length}</h3>
     ${p.comments.map(c=>`<div class="comment"><span class="comment-author">${c.author}</span>${c.text}</div>`).join('') || '<p style="color:var(--sub);font-size:13.5px">아직 댓글이 없어요.</p>'}
+    ${currentUser ? `
     <div class="comment-form">
       <input id="commentInput" type="text" placeholder="댓글을 남겨보세요">
       <button class="btn btn-sub" id="commentBtn" ${locks.comment?'disabled':''}>${locks.comment?'등록 중':'등록'}</button>
-    </div>
+    </div>` : `<p style="color:var(--sub);font-size:13px;margin-top:10px">로그인 후 댓글을 남길 수 있어요.</p>`}
   </div>
   `;
 }
@@ -479,8 +546,11 @@ function renderDetail(){
    렌더 — 마이페이지
    ============================================================ */
 function renderMyPage(){
-  const myPosts = posts.filter(p=>p.author===currentUser.name);
-  const joinedPosts = posts.filter(p=>myParticipations.includes(p.id));
+  if(!currentUser){
+    return `<div class="empty">로그인 후 이용할 수 있어요.<br><br><button class="btn" data-nav="auth">로그인 하러 가기</button></div>`;
+  }
+  const myPosts = posts.filter(p=>p.authorUid===currentUser.uid);
+  const joinedPosts = posts.filter(p=>p.fills.some(f=>f.applicantUid===currentUser.uid));
 
   const cardMini = p => `
     <div class="card" data-open="${p.id}">
@@ -497,10 +567,10 @@ function renderMyPage(){
   <p class="page-sub">내가 쓴 글과 참여한 모집글을 한눈에 확인해요.</p>
 
   <div class="profile-card">
-    <div class="avatar">${currentUser.name[0]}</div>
+    <div class="avatar">${currentUser.nickname[0]}</div>
     <div>
-      <div style="font-weight:700;font-size:15px">${currentUser.name}</div>
-      <div style="color:var(--sub);font-size:12.5px">롤메이트 멤버</div>
+      <div style="font-weight:700;font-size:15px">${currentUser.nickname} ${currentUser.isAdmin?'<span class="badge badge-admin">관리자</span>':''}</div>
+      <div style="color:var(--sub);font-size:12.5px">${currentUser.email}</div>
     </div>
     <div class="profile-points">
       <div class="num">${joinedPosts.length}건</div>
@@ -517,36 +587,20 @@ function renderMyPage(){
 }
 
 /* ============================================================
-   렌더 — 참여 신청 모달
+   렌더 — 참여 확인 모달
    ============================================================ */
 function renderModal(){
   const m = state.modal;
   if(!m) return '';
   const p = posts.find(x=>x.id===m.postId);
   if(!p) return '';
-
-  if(m.step===1){
-    return `
-    <div class="modal-overlay">
-      <div class="modal-card">
-        <h3 class="modal-title">참여 신청 — ${m.role}</h3>
-        <p class="page-sub" style="margin-bottom:14px">어떤 아이디로 참여하실 건가요?</p>
-        <input id="applyIdInput" type="text" placeholder="" value="${m.idValue.replace(/"/g,'&quot;')}"
-          style="width:100%;border:1px solid var(--border);border-radius:10px;padding:11px 13px;outline:none;margin-bottom:6px">
-        <div class="modal-actions">
-          <button class="btn btn-ghost" id="modalCancel">취소</button>
-          <button class="btn" id="modalNext">다음</button>
-        </div>
-      </div>
-    </div>`;
-  }
   return `
   <div class="modal-overlay">
     <div class="modal-card">
       <h3 class="modal-title">실제로 이벤트에 참여해 주었나요?</h3>
       <p class="page-sub" style="margin-bottom:6px">'${p.title}'의 <b style="color:var(--text)">${m.role}</b> 역할로 등록할게요.</p>
       <div class="modal-actions">
-        <button class="btn btn-ghost" id="modalBack">이전</button>
+        <button class="btn btn-ghost" id="modalCancel">취소</button>
         <button class="btn" id="modalConfirm" ${locks.modalConfirm?'disabled':''}>${locks.modalConfirm?'처리 중...':'확인하기'}</button>
       </div>
     </div>
@@ -563,6 +617,7 @@ function render(){
   else if(state.view==='write') body = renderWrite();
   else if(state.view==='detail') body = renderDetail();
   else if(state.view==='mypage') body = renderMyPage();
+  else if(state.view==='auth') body = renderAuth();
 
   app.innerHTML = `${renderHeader()}<main>${body}</main>${renderModal()}`;
   bindEvents();
@@ -572,6 +627,7 @@ function goTo(view, id){
   state.view = view;
   if(id!==undefined) state.selectedId = id;
   if(view==='write') state.draftRoles = [];
+  if(view==='auth') state.authMode = 'login';
   state.notifOpen = false;
   window.scrollTo(0,0);
   render();
@@ -597,6 +653,14 @@ function bindEvents(){
     });
   }
 
+  const logoutBtn = document.getElementById('logoutBtn');
+  if(logoutBtn){
+    logoutBtn.addEventListener('click', ()=>{
+      auth.signOut();
+      goTo('home');
+    });
+  }
+
   const searchInput = document.getElementById('searchInput');
   if(searchInput){
     searchInput.addEventListener('input', e=>{ state.keyword = e.target.value; render(); searchInput.focus(); searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length); });
@@ -619,11 +683,10 @@ function bindEvents(){
   const submitPost = document.getElementById('submitPost');
   if(submitPost){
     submitPost.addEventListener('click', async ()=>{
-      if(locks.submitPost) return;
-      const author = document.getElementById('fAuthor').value.trim();
+      if(locks.submitPost || !requireLogin()) return;
       const title = document.getElementById('fTitle').value.trim();
       const link = document.getElementById('fLink').value.trim();
-      if(!author || !title || !link || !state.draftRoles.length){ alert('작성자 이름, 제목, 게임방 링크, 필요한 역할은 꼭 입력해주세요.'); return; }
+      if(!title || !link || !state.draftRoles.length){ alert('제목, 게임방 링크, 필요한 역할은 꼭 입력해주세요.'); return; }
       locks.submitPost = true;
       render();
       try{
@@ -632,7 +695,8 @@ function bindEvents(){
           roles: [...state.draftRoles],
           reward: document.getElementById('fReward').value.trim(),
           status: '모집중',
-          author,
+          author: currentUser.nickname,
+          authorUid: currentUser.uid,
           createdAt: new Date().toISOString(),
           desc: document.getElementById('fDesc').value.trim() || '설명이 없습니다.',
           comments: [],
@@ -651,50 +715,34 @@ function bindEvents(){
 
   document.querySelectorAll('[data-apply]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
+      if(!requireLogin()) return;
       const [postId, role] = btn.dataset.apply.split('|');
-      state.modal = { postId, role, step:1, idValue:'' };
+      state.modal = { postId, role };
       render();
     });
   });
 
-  const applyIdInput = document.getElementById('applyIdInput');
-  if(applyIdInput){
-    applyIdInput.addEventListener('input', e=>{ state.modal.idValue = e.target.value; });
-  }
   const modalCancel = document.getElementById('modalCancel');
   if(modalCancel) modalCancel.addEventListener('click', ()=>{ state.modal = null; render(); });
-  const modalBack = document.getElementById('modalBack');
-  if(modalBack) modalBack.addEventListener('click', ()=>{ state.modal.step = 1; render(); });
-  const modalNext = document.getElementById('modalNext');
-  if(modalNext){
-    modalNext.addEventListener('click', ()=>{
-      if(!state.modal.idValue.trim()){ alert('아이디를 입력해주세요.'); return; }
-      state.modal.step = 2;
-      render();
-    });
-  }
+
   const modalConfirm = document.getElementById('modalConfirm');
   if(modalConfirm){
     modalConfirm.addEventListener('click', async ()=>{
-      if(locks.modalConfirm) return;
-      const { postId, role, idValue } = state.modal;
+      if(locks.modalConfirm || !requireLogin()) return;
+      const { postId, role } = state.modal;
       const p = posts.find(x=>x.id===postId);
       if(!p) return;
       locks.modalConfirm = true;
       render();
       try{
         const newRoles = p.roles.filter(r=>r!==role);
-        const newFills = [...p.fills, { role, applicant: idValue.trim() }];
+        const newFills = [...p.fills, { role, applicant: currentUser.nickname, applicantUid: currentUser.uid }];
         const newStatus = newRoles.length===0 ? '마감' : '모집중';
         await withTimeout(db.collection('posts').doc(postId).update({ roles:newRoles, fills:newFills, status:newStatus }));
         await withTimeout(notifsCol.add({
-          text: `${idValue.trim()}님이 "${p.title}"의 [${role}] 역할을 채워주셨어요.`,
+          text: `${currentUser.nickname}님이 "${p.title}"의 [${role}] 역할을 채워주셨어요.`,
           time: new Date().toISOString()
         }));
-        if(!myParticipations.includes(p.id)){
-          myParticipations.push(p.id);
-          localStorage.setItem('myParticipations', JSON.stringify(myParticipations));
-        }
         locks.modalConfirm = false;
         showToast('참여가 확인됐어요! 감사합니다 🙌');
         state.modal = null;
@@ -710,7 +758,7 @@ function bindEvents(){
   const commentBtn = document.getElementById('commentBtn');
   if(commentBtn){
     commentBtn.addEventListener('click', async ()=>{
-      if(locks.comment) return;
+      if(locks.comment || !requireLogin()) return;
       const input = document.getElementById('commentInput');
       const text = input.value.trim();
       if(!text) return;
@@ -719,7 +767,7 @@ function bindEvents(){
       locks.comment = true;
       render();
       try{
-        await withTimeout(db.collection('posts').doc(p.id).update({ comments: firebase.firestore.FieldValue.arrayUnion({author:currentUser.name, text}) }));
+        await withTimeout(db.collection('posts').doc(p.id).update({ comments: firebase.firestore.FieldValue.arrayUnion({author:currentUser.nickname, text}) }));
       }catch(err){
         alert('댓글 등록 실패: ' + (err && (err.code || err.message) || err));
       }
@@ -727,10 +775,63 @@ function bindEvents(){
       render();
     });
   }
+
+  const deletePostBtn = document.getElementById('deletePostBtn');
+  if(deletePostBtn){
+    deletePostBtn.addEventListener('click', async ()=>{
+      if(locks.deletePost) return;
+      if(!confirm('이 모집글을 삭제할까요? 되돌릴 수 없어요.')) return;
+      locks.deletePost = true;
+      try{
+        await withTimeout(postsCol.doc(state.selectedId).delete());
+        showToast('삭제됐어요.');
+        goTo('home');
+      }catch(err){
+        alert('삭제 실패: ' + (err && (err.code || err.message) || err));
+      }
+      locks.deletePost = false;
+    });
+  }
+
+  const authToggle = document.getElementById('authToggle');
+  if(authToggle){
+    authToggle.addEventListener('click', ()=>{
+      state.authMode = state.authMode==='login' ? 'signup' : 'login';
+      render();
+    });
+  }
+
+  const authSubmit = document.getElementById('authSubmit');
+  if(authSubmit){
+    authSubmit.addEventListener('click', async ()=>{
+      if(locks.authSubmit) return;
+      const email = document.getElementById('authEmail').value.trim();
+      const password = document.getElementById('authPassword').value;
+      const isLogin = state.authMode==='login';
+      const nickname = !isLogin ? document.getElementById('authNickname').value.trim() : '';
+      if(!email || !password || (!isLogin && !nickname)){ alert('빈 칸 없이 입력해주세요.'); return; }
+      locks.authSubmit = true;
+      render();
+      try{
+        if(isLogin){
+          await withTimeout(auth.signInWithEmailAndPassword(email, password));
+        } else {
+          const cred = await withTimeout(auth.createUserWithEmailAndPassword(email, password));
+          await withTimeout(usersCol.doc(cred.user.uid).set({ nickname, isAdmin:false, createdAt:new Date().toISOString() }));
+        }
+        locks.authSubmit = false;
+        goTo('home');
+      }catch(err){
+        locks.authSubmit = false;
+        alert('실패: ' + (err && (err.message || err.code) || err));
+        render();
+      }
+    });
+  }
 }
 
 /* ============================================================
-   Firestore 실시간 구독
+   Firestore / Auth 실시간 구독
    ============================================================ */
 postsCol.onSnapshot(snapshot=>{
   posts = snapshot.docs.map(d=>({ id:d.id, ...d.data() }));
@@ -747,6 +848,20 @@ notifsCol.onSnapshot(snapshot=>{
     .sort((a,b)=> new Date(b.time) - new Date(a.time));
   render();
 }, err=> console.error('notifications 구독 실패', err));
+
+auth.onAuthStateChanged(user=>{
+  if(profileUnsub){ profileUnsub(); profileUnsub = null; }
+  if(user){
+    profileUnsub = usersCol.doc(user.uid).onSnapshot(doc=>{
+      const data = doc.data() || {};
+      currentUser = { uid:user.uid, email:user.email, nickname:data.nickname || user.email, isAdmin: !!data.isAdmin };
+      render();
+    });
+  } else {
+    currentUser = null;
+    render();
+  }
+});
 
 function runDiagnostic(){
   const btn = document.getElementById('diagBtn');
