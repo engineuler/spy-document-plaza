@@ -116,7 +116,8 @@ main{flex:1;max-width:1080px;width:100%;margin:0 auto;padding:24px 20px 60px}
 }
 .field input:focus,.field textarea:focus,.field select:focus{border-color:var(--primary)}
 .field textarea{min-height:90px;resize:vertical}
-.chip-select{display:flex;gap:8px;flex-wrap:wrap}
+.chip-select{display:grid;grid-template-columns:repeat(5, 1fr);gap:8px}
+.chip{text-align:center}
 .chip{border:1px solid var(--border);border-radius:99px;padding:7px 14px;font-size:13px;cursor:pointer;background:var(--bg);user-select:none;transition:.15s}
 .chip.selected{background:var(--primary);color:#fff;border-color:var(--primary)}
 .form-actions{display:flex;gap:10px;margin-top:24px}
@@ -177,7 +178,7 @@ main{flex:1;max-width:1080px;width:100%;margin:0 auto;padding:24px 20px 60px}
 <body>
 <div id="app"></div>
 <div id="toastHost" class="toast-host"></div>
-<div style="position:fixed;left:8px;bottom:6px;font-size:11px;color:#bbb;z-index:5;font-family:sans-serif">build v21</div>
+<div style="position:fixed;left:8px;bottom:6px;font-size:11px;color:#bbb;z-index:5;font-family:sans-serif">build v22</div>
 <button id="diagBtn" style="position:fixed;right:8px;bottom:6px;font-size:11px;color:#fff;background:#191919;border:none;border-radius:6px;padding:5px 9px;z-index:5;font-family:sans-serif">진단</button>
 
 <script>
@@ -226,7 +227,7 @@ const Icon = {
 /* ============================================================
    데이터 (Firestore에서 실시간으로 채워짐)
    ============================================================ */
-const GAME_ROLES = ['마피아','경찰','의사','스파이','영매','군인','정치인','연인','기자','짐승 인간','건달','사립탐정','도굴꾼','테러리스트','마담','성직자','예언자','판사','도둑','간호사','교주','자경단원','마술사','마녀','과학자','해커','심리학자','광신도','공무원','사기꾼','청부업자','비밀결사','파파라치'];
+const GAME_ROLES = ['마피아','경찰','의사','스파이','영매','군인','정치인','연인','기자','짐승 인간','건달','사립탐정','도굴꾼','테러리스트','마담','성직자','예언자','판사','도둑','간호사','교주','자경단원','마술사','마녀','과학자','해커','심리학자','광신도','용병','공무원','사기꾼','청부업자','비밀결사','파파라치'];
 
 let posts = [];
 let notifications = [];
