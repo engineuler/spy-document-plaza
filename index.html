@@ -178,7 +178,7 @@ main{flex:1;max-width:1080px;width:100%;margin:0 auto;padding:24px 20px 60px}
 <body>
 <div id="app"></div>
 <div id="toastHost" class="toast-host"></div>
-<div style="position:fixed;left:8px;bottom:6px;font-size:11px;color:#bbb;z-index:5;font-family:sans-serif">build v25</div>
+<div style="position:fixed;left:8px;bottom:6px;font-size:11px;color:#bbb;z-index:5;font-family:sans-serif">build v26</div>
 <button id="diagBtn" style="position:fixed;right:8px;bottom:6px;font-size:11px;color:#fff;background:#191919;border:none;border-radius:6px;padding:5px 9px;z-index:5;font-family:sans-serif">진단</button>
 
 <script>
@@ -504,6 +504,7 @@ function renderDetail(){
   const p = posts.find(x=>x.id===state.selectedId);
   if(!p) return `<div class="empty">모집글을 찾을 수 없어요.</div>`;
   const canManage = currentUser && (currentUser.isAdmin || currentUser.uid===p.authorUid);
+  const isAuthor = currentUser && currentUser.uid===p.authorUid;
 
   return `
   <button class="back-btn" data-nav="home">${Icon.back}목록으로</button>
@@ -549,7 +550,7 @@ function renderDetail(){
     ${p.fills.map((f,i)=>`
       <div class="role-fill-row">
         <div><span class="tag">${esc(f.role)}</span><span style="margin-left:8px;font-size:13.5px">${esc(f.applicant)}</span></div>
-        ${canManage
+        ${isAuthor
           ? `<button class="btn ${f.rewardGiven?'btn-sub':'btn-ghost'} btn-sm" data-toggle-reward="${p.id}|${i}" ${locks.toggleReward?'disabled':''}>${f.rewardGiven?'✅ 지급완료':'보상 지급 표시'}</button>`
           : `<span class="badge ${f.rewardGiven?'badge-open':'badge-closed'}">${f.rewardGiven?'지급완료':'지급 전'}</span>`}
       </div>
