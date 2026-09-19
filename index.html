@@ -178,7 +178,7 @@ main{flex:1;max-width:1080px;width:100%;margin:0 auto;padding:24px 20px 60px}
 <body>
 <div id="app"></div>
 <div id="toastHost" class="toast-host"></div>
-<div style="position:fixed;left:8px;bottom:6px;font-size:11px;color:#bbb;z-index:5;font-family:sans-serif">build v24</div>
+<div style="position:fixed;left:8px;bottom:6px;font-size:11px;color:#bbb;z-index:5;font-family:sans-serif">build v25</div>
 <button id="diagBtn" style="position:fixed;right:8px;bottom:6px;font-size:11px;color:#fff;background:#191919;border:none;border-radius:6px;padding:5px 9px;z-index:5;font-family:sans-serif">진단</button>
 
 <script>
@@ -237,7 +237,7 @@ let currentUser = null; // {uid, email, nickname, isAdmin} — 로그인 안 하
 let profileUnsub = null;
 let notifsUnsub = null;
 let readNotifIds = new Set(); // 알림 읽음 표시 — 로그인 전까지는 이 브라우저에서만 유지됨
-let locks = { submitPost:false, modalConfirm:false, comment:false, authSubmit:false, deletePost:false }; // 중복 클릭(연타) 방지용
+let locks = { submitPost:false, modalConfirm:false, comment:false, authSubmit:false, deletePost:false, toggleReward:false }; // 중복 클릭(연타) 방지용
 
 /* ============================================================
    상태
@@ -546,7 +546,14 @@ function renderDetail(){
   ${p.fills.length ? `
   <div class="detail-box">
     <h3>채워진 역할</h3>
-    ${p.fills.map(f=>`<div class="comment"><span class="comment-author">${esc(f.role)}</span>${esc(f.applicant)}</div>`).join('')}
+    ${p.fills.map((f,i)=>`
+      <div class="role-fill-row">
+        <div><span class="tag">${esc(f.role)}</span><span style="margin-left:8px;font-size:13.5px">${esc(f.applicant)}</span></div>
+        ${canManage
+          ? `<button class="btn ${f.rewardGiven?'btn-sub':'btn-ghost'} btn-sm" data-toggle-reward="${p.id}|${i}" ${locks.toggleReward?'disabled':''}>${f.rewardGiven?'✅ 지급완료':'보상 지급 표시'}</button>`
+          : `<span class="badge ${f.rewardGiven?'badge-open':'badge-closed'}">${f.rewardGiven?'지급완료':'지급 전'}</span>`}
+      </div>
+    `).join('')}
   </div>` : ''}
 
   <div class="detail-box" style="margin-top:16px">
@@ -857,7 +864,7 @@ function bindEvents(){
       render();
       try{
         const newRoles = p.roles.filter(r=>r!==role);
-        const newFills = [...p.fills, { role, applicant: currentUser.nickname, applicantUid: currentUser.uid }];
+        const newFills = [...p.fills, { role, applicant: currentUser.nickname, applicantUid: currentUser.uid, rewardGiven:false }];
         const newStatus = newRoles.length===0 ? '마감' : '모집중';
         await withTimeout(db.collection('posts').doc(postId).update({ roles:newRoles, fills:newFills, status:newStatus }));
         await withTimeout(notifsCol.add({
@@ -914,6 +921,26 @@ function bindEvents(){
       locks.deletePost = false;
     });
   }
+
+  document.querySelectorAll('[data-toggle-reward]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      if(locks.toggleReward) return;
+      const [postId, idxStr] = btn.dataset.toggleReward.split('|');
+      const idx = Number(idxStr);
+      const p = posts.find(x=>x.id===postId);
+      if(!p || !p.fills[idx]) return;
+      locks.toggleReward = true;
+      render();
+      try{
+        const newFills = p.fills.map((f,i)=> i===idx ? { ...f, rewardGiven: !f.rewardGiven } : f);
+        await withTimeout(postsCol.doc(postId).update({ fills:newFills }));
+      }catch(err){
+        alert('처리 실패: ' + (err && (err.code || err.message) || err));
+      }
+      locks.toggleReward = false;
+      render();
+    });
+  });
 
   const authToggle = document.getElementById('authToggle');
   if(authToggle){
